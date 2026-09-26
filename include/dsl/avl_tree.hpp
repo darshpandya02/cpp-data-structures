@@ -56,11 +56,12 @@ private:
     static void update(Node* n) noexcept { n->height = 1 + max(h(n->left), h(n->right)); }
     static int balance(const Node* n) noexcept { return h(n->left) - h(n->right); }
 
-    //      x                y
-    //     / \              / \
-    //    a   y     ->     x   c
-    //       / \          / \
-    //      b   c        a   b
+    /*      x                y
+     *     / \              / \
+     *    a   y     ->     x   c
+     *       / \          / \
+     *      b   c        a   b
+     */
     Node* rotate_left(Node* x) noexcept {
         Node* y = x->right;
         x->right = y->left;
