@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    name: ${{ matrix.compiler }} / ${{ matrix.check }}
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [g++, clang++]
+        check: [test, asan, tsan]
+    env:
+      CXX: ${{ matrix.compiler }}
+      WERROR: "1"
+      # LeakSanitizer is on by default with ASan on Linux; spelled out here.
+      ASAN_OPTIONS: detect_leaks=1:detect_stack_use_after_return=1:strict_init_order=1
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compiler version
+        run: $CXX --version
+      - name: Allow ThreadSanitizer's memory layout
+        # TSan fails to start with the default ASLR entropy on newer kernels.
+        if: matrix.check == 'tsan'
+        run: sudo sysctl vm.mmap_rnd_bits=28
+      - name: make ${{ matrix.check }}
+        run: make -j4 ${{ matrix.check }}
+
+  bench-and-demo:
+    name: benchmarks and demo build (smoke)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: make -j4 WERROR=1 build/bench build/dsl-demo
+      - run: ./build/dsl-demo
+      - run: ./build/bench --quick
